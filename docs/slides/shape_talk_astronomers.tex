@@ -1,0 +1,394 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{metropolis}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+\usepackage{appendixnumberbeamer}
+\graphicspath{{../figures/shapes/talk/}{../figures/shapes/}}
+
+\definecolor{vizblue}{HTML}{2A78D6}
+\definecolor{vizorange}{HTML}{EB6834}
+\definecolor{vizgrey}{HTML}{8A8A8A}
+\definecolor{vizaqua}{HTML}{1BAF7A}
+\definecolor{vizyellow}{HTML}{EDA100}
+\setbeamercolor{progress bar}{fg=vizblue}
+\setbeamercolor{title separator}{fg=vizblue}
+\setbeamercolor{alerted text}{fg=vizorange}
+\metroset{numbering=fraction, progressbar=frametitle}
+
+\title{Can a compressed alert still surprise us?}
+\subtitle{Fingerprinting LSST alerts, and a test with circles and squares}
+\author{RTF: Real-Time Fingerprints}
+\date{October 2026}
+
+\begin{document}
+
+\maketitle
+
+% ---------------------------------------------------------------------------
+\begin{frame}{The problem: ten million alerts a night}
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \begin{itemize}
+      \item LSST will issue $\sim$10 million alerts every night.
+      \item Each one: the light curve so far, a $63{\times}63$ pixel cutout triplet,
+        and catalogue metadata.
+      \item Brokers filter the stream down to what they can serve and discard the rest.
+      \item \alert{What you did not know to look for never reaches you.}
+    \end{itemize}
+    \column{0.48\textwidth}
+    \centering
+    \begin{tikzpicture}[x=1cm, y=1cm]
+      \draw[fill=vizgrey!30, draw=none] (0,0) rectangle (5.0,0.8);
+      \node[anchor=west] at (0.1,0.4) {\small raw stream $\sim$100\,MB/s};
+      \draw[fill=vizblue, draw=none] (0,-1.2) rectangle (0.05,-0.4);
+      \node[anchor=west] at (0.15,-0.8) {\small what can be served $\sim$1\,MB/s (one HD video)};
+    \end{tikzpicture}
+    \vspace{0.8em}
+
+    \includegraphics[width=\textwidth]{talk_stamp_triplet.png}
+    {\scriptsize synthetic cutout triplet used later in this talk}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{What is in an alert, 1/3: the cutout triplet}
+  \centering
+  \includegraphics[width=0.47\textwidth]{talk_triplet_explained.png}
+  \vspace{-0.5em}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+    \footnotesize
+    \begin{itemize}
+      \item \textbf{Science:} tonight's exposure, $63{\times}63$ pixels ($\approx 1'$)
+        around the candidate: transient, host, neighbours, sky.
+      \item \textbf{Template:} a deep stack of earlier images of the same field.
+        The sky \emph{before}.
+      \item \textbf{Difference:} the survey pipeline's subtraction. What changed.
+    \end{itemize}
+    \column{0.5\textwidth}
+    \footnotesize
+    \textbf{Why all three?}
+    \begin{itemize}
+      \item The difference is \emph{not} science minus template of these crops: the
+        pipeline makes it on full frames with PSF matching and resampling the
+        crops cannot reproduce.
+      \item The template gives host context: nuclear, offset, on a star, empty sky.
+      \item Science + template together expose bad subtractions.
+    \end{itemize}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{What is in an alert, 2/3: the light curve}
+  \begin{columns}[T]
+    \column{0.58\textwidth}
+    \centering
+    \includegraphics[height=0.72\textheight]{talk_light_curve.png}
+    \column{0.42\textwidth}
+    \footnotesize
+    Brightness vs.\ time in three filters, sampled whenever the survey happened to
+    look. Rise time, decline rate and colour evolution separate the classes.
+    \vspace{0.3em}
+
+    \textbf{What the model receives}, per detection:
+    \vspace{0.1em}
+
+    \begin{tabular}{@{}ll@{}}
+      \toprule
+      time since first detection & $\log(1{+}\Delta t)$ \\
+      gap since previous one     & $\log(1{+}\delta t)$ \\
+      flux, flux error           & $\log$ \\
+      filter                     & g / r / i flag \\
+      \bottomrule
+    \end{tabular}
+    \vspace{0.2em}
+
+    A variable-length list of such rows; the two time features exist because the
+    sampling is irregular. In today's toy this input is \alert{switched off}.
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{What is in an alert, 3/3: the metadata}
+  \begin{columns}[T]
+    \column{0.55\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{talk_metadata_annotated.png}
+    \column{0.45\textwidth}
+    \footnotesize
+    About 30 numbers the pipeline has already computed for every alert, mostly
+    about \emph{context}:
+    \begin{itemize}
+      \item nearest catalogued source: distance, brightness, star or galaxy
+      \item how point-like the detection is
+      \item the survey's own real-vs-bogus score
+      \item how many detections so far
+    \end{itemize}
+    The pixels say what it looks like; the metadata says what the catalogues
+    already know about that spot. Also \alert{switched off} in today's toy.
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{The idea: a 256-byte fingerprint per alert}
+  \centering
+  \begin{tikzpicture}[
+      box/.style={draw=vizblue, thick, rounded corners, minimum height=1.4cm,
+                  minimum width=2.6cm, align=center, font=\small},
+      arr/.style={-{Latex[length=2.5mm]}, thick, vizgrey}]
+    \node[box] (a) {alert\\light curve + cutouts};
+    \node[box, right=1.1cm of a, fill=vizblue!10] (e) {encoder\\(a trained network)};
+    \node[box, right=1.1cm of e] (z) {fingerprint\\64 numbers = 256 bytes};
+    \draw[arr] (a) -- (e);
+    \draw[arr] (e) -- (z);
+  \end{tikzpicture}
+  \vspace{0.8em}
+
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \textbf{The analogy you already use}
+    \begin{itemize}
+      \item A full spectrum $\to$ (colour, magnitude) on a CMD.
+      \item Two numbers, chosen by physics, that preserve what matters.
+      \item A fingerprint is the same idea with more numbers, chosen by training
+        on 18\,000 labelled ZTF transients.
+    \end{itemize}
+    \column{0.5\textwidth}
+    \textbf{What you can do with fingerprints}
+    \begin{itemize}
+      \item Classify: 87\,\% accuracy from 256 bytes (full pipeline: 94\,\%).
+      \item Find look-alikes: nearest neighbours in fingerprint space.
+      \item Flag outliers: things far from everything seen before.
+    \end{itemize}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{The tension: recognise vs.\ discover}
+  \centering
+  \begin{tikzpicture}[x=1cm, y=1cm, dot/.style={circle, inner sep=1.6pt}]
+    % left: tidy clusters, unknown lands inside one
+    \node[font=\small\bfseries] at (2.2,3.4) {trained hard to recognise};
+    \draw[rounded corners, draw=vizgrey!60] (0,0) rectangle (4.4,3.0);
+    \foreach \p in {(0.9,2.1),(1.1,2.4),(1.3,2.0),(0.8,2.5),(1.2,2.2),(1.0,1.9)}
+      \node[dot, fill=vizblue] at \p {};
+    \foreach \p in {(3.2,0.9),(3.5,1.1),(3.3,0.7),(3.6,0.8),(3.1,1.2),(3.4,1.0)}
+      \node[dot, fill=vizorange] at \p {};
+    \node[star, star points=5, fill=vizaqua, inner sep=2.2pt] at (1.15,2.2) {};
+    \node[font=\scriptsize] at (1.1,1.5) {SN Ia};
+    \node[font=\scriptsize] at (3.35,0.3) {TDE};
+    \node[font=\scriptsize, vizaqua] at (2.3,2.6) {new thing lands \emph{inside}};
+    % right: looser clusters, unknown sits alone
+    \begin{scope}[xshift=6cm]
+      \node[font=\small\bfseries] at (2.2,3.4) {keeps more than it needs};
+      \draw[rounded corners, draw=vizgrey!60] (0,0) rectangle (4.4,3.0);
+      \foreach \p in {(0.8,2.2),(1.3,2.6),(1.5,1.9),(0.7,2.6),(1.2,2.1),(1.0,1.7)}
+        \node[dot, fill=vizblue] at \p {};
+      \foreach \p in {(3.0,0.8),(3.6,1.3),(3.3,0.5),(3.8,0.9),(2.9,1.3),(3.4,1.0)}
+        \node[dot, fill=vizorange] at \p {};
+      \node[star, star points=5, fill=vizaqua, inner sep=2.2pt] at (3.4,2.5) {};
+      \node[font=\scriptsize, vizaqua] at (3.3,2.0) {new thing sits \emph{alone}};
+    \end{scope}
+  \end{tikzpicture}
+  \vspace{0.5em}
+  \begin{itemize}
+    \item The network keeps only what its training rewards.
+    \item If the training question is ``SN Ia or TDE?'', nothing rewards keeping
+      ``this looks like neither''.
+    \item \alert{This is the question the rest of the talk tests.}
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Why a toy: circles and squares}
+  \centering
+  \includegraphics[width=0.9\textwidth]{talk_stamps_row.png}
+  \vspace{0.6em}
+  \begin{itemize}
+    \item Before trusting this on real transients, test the image part alone on a
+      problem whose answer we know.
+    \item Light-curve input switched off: the fingerprint depends only on the cutout.
+    \item Synthetic stamps: circles and squares of equal area, random size, position
+      and brightness, plus noise. \emph{Nothing but shape distinguishes them.}
+    \item If the fingerprint cannot separate these, nothing downstream is meaningful.
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Two ways to build the image encoder}
+  \centering
+  \begin{tikzpicture}[
+      box/.style={draw=vizblue, thick, rounded corners, minimum height=2.4cm,
+                  text width=5.2cm, align=center, font=\small}]
+    \node[box] (a) {\textbf{From scratch}\\[0.3em]
+      0.25 million parameters\\ starts knowing nothing\\ learns only from our stamps};
+    \node[box, right=1.2cm of a, fill=vizblue!10] (b) {\textbf{Zoobot}\\[0.3em]
+      8.5 million parameters\\ pre-trained on Galaxy Zoo morphology votes\\
+      weights frozen: used exactly as published};
+  \end{tikzpicture}
+  \vspace{0.8em}
+  \begin{itemize}
+    \item Zoobot is a public model (Walmsley et al.). We never retrain its weights;
+      we only train a small read-out that maps its output into our 16 numbers.
+    \item A first-year student vs.\ someone who has classified galaxies for a decade.
+      Both get the same homework.
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Result 1: from scratch works, but is hungry and fragile}
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \includegraphics[width=\textwidth]{talk_data_efficiency.png}
+    \column{0.5\textwidth}
+    \includegraphics[width=\textwidth]{talk_noise.png}
+  \end{columns}
+  \begin{itemize}
+    \item 256 examples: 62\,\%. About 1000 examples: 99\,\%.
+    \item Add modest noise and 512 examples is no longer enough; 2048 fixes it.
+    \item \alert{Rare transient classes do not come with 1000 labelled examples.}
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Result 2: Zoobot already knows}
+  \begin{columns}[T]
+    \column{0.55\textwidth}
+    \includegraphics[width=\textwidth]{talk_backbone.png}
+    \column{0.43\textwidth}
+    \vspace{1em}
+    \begin{itemize}
+      \item ``Before'' means a random read-out on top of frozen Zoobot features.
+        No training on circles or squares whatsoever.
+      \item It already separates them at 95\,\%.
+      \item This is the data-efficiency argument in one picture.
+    \end{itemize}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{The discovery test: shapes it has never seen}
+  \centering
+  \includegraphics[width=0.8\textwidth]{talk_novel_row.png}
+  \vspace{0.2em}
+  \begin{itemize}
+    \item Train on circles and squares only. Then show four new shapes and ask,
+      \emph{without telling it}:
+    \begin{enumerate}
+      \item Is this fingerprint far from every circle and square we trained on?
+        (score: how often a new shape looks more unusual than a known one;
+        50\,\% useless, 100\,\% perfect)
+      \item If we group the fingerprints blindly, do the new shapes get their own groups?
+    \end{enumerate}
+    \item Ceiling check: \emph{if} we had labels, could a straight line separate all six?
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Result 3: from scratch cannot; Zoobot can}
+  \centering
+  \includegraphics[width=0.7\textwidth]{talk_tsne_pair.png}
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \small
+    \textbf{From scratch:} new-shape detection 68\,\%; six-shape separability 43\,\%.
+    Triangles, rings and ellipses are all filed as ``circle'', confidently.
+    \column{0.5\textwidth}
+    \small
+    \textbf{Zoobot, no training:} detection 99.8\,\%; separability 99.5\,\%.
+    Ring and cross form their own islands; triangle and ellipse sit close.
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{The catch: teaching it to classify squashes the fingerprint}
+  \begin{columns}[T]
+    \column{0.55\textwidth}
+    \centering
+    \includegraphics[height=0.6\textheight]{talk_pca_pair.png}
+    \column{0.45\textwidth}
+    \small
+    \begin{itemize}
+      \item Once the read-out learns circle vs.\ square, the fingerprint collapses
+        onto a line.
+      \item Six-shape separability: 99.5\,\% $\to$ 85\,\%. Ring now sits on top of
+        circle.
+      \item New-shape detection holds up (96\,\%): each shape keeps its own stretch
+        of the line.
+      \item \alert{Classification rewards one direction and lets the others fade.}
+        Adding ``reconstruct the image'' recovers most of it (97\,\%).
+    \end{itemize}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{What this means, and what is next}
+  \textbf{Three takeaways}
+  \begin{enumerate}
+    \item Use a Galaxy Zoo pre-trained encoder for cutouts. From scratch is not viable
+      for rare classes.
+    \item Be deliberate about how hard the fingerprint is pushed to classify; keep a
+      reconstruction-type objective in the mix.
+    \item Measure discoverability on real alerts next: train without TDEs, then ask
+      whether TDEs look unusual.
+  \end{enumerate}
+  \textbf{Honest caveats}
+  \begin{itemize}
+    \item Synthetic shapes are easy. Real stamps have hosts, PSF blur and faint sources.
+    \item Not yet tested: whether an ordinary ImageNet-pre-trained network does as well.
+      If it does, the win is ``pre-training'', not ``Galaxy Zoo''.
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\appendix
+
+\begin{frame}{Backup: the seven fingerprint variants}
+  \centering
+  \small
+  \begin{tabular}{@{}lcccc@{}}
+    \toprule
+    fingerprint built by & separability (labels) & new-shape detection & blind grouping & dims used \\
+    \midrule
+    untrained small network     & 0.23 & 0.55 & 0.00 & 3.3 \\
+    small network, classify     & 0.43 & 0.68 & 0.28 & 1.0 \\
+    small network, reconstruct  & 0.34 & 0.75 & 0.01 & 5.2 \\
+    small network, both         & 0.44 & 0.68 & 0.23 & 2.7 \\
+    Zoobot, no training         & \textbf{0.995} & \textbf{0.998} & 0.54 & 4.8 \\
+    Zoobot, classify            & 0.85 & 0.96 & 0.54 & 1.0 \\
+    Zoobot, both                & 0.97 & 0.97 & \textbf{0.62} & 1.4 \\
+    \bottomrule
+  \end{tabular}
+  \vspace{0.5em}
+
+  2048 training stamps, 256 held-out stamps per shape, 2 seeds (Zoobot untrained: 1).
+\end{frame}
+
+\begin{frame}{Backup: how the numbers are defined}
+  \begin{itemize}
+    \item \textbf{Separability (with labels):} 6-way logistic regression on the 16-number
+      fingerprint, 5-fold cross-validated accuracy.
+    \item \textbf{New-shape detection:} mean distance to the 5 nearest circle/square
+      training fingerprints; AUROC of new vs.\ known.
+    \item \textbf{Blind grouping:} $k$-means with $k{=}6$; adjusted mutual information
+      against the true shape.
+    \item \textbf{Dims used:} participation ratio of the fingerprint covariance
+      (16 = all directions equal, 1 = a line).
+    \item \textbf{The 2-D maps:} PCA shows the two largest directions (honest, can hide
+      structure); t-SNE folds all 16 into the plane (shows structure, exaggerates gaps).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Backup: is noise a visibility problem or a data problem?}
+  \centering
+  \includegraphics[width=0.72\textwidth]{04_noise.png}
+
+  \small Blob brightness is 0.6--1.4. With 2048 examples the from-scratch network is
+  perfect at noise 0.25 and still useful at 0.5; only at noise $\approx$ brightness does
+  more data stop helping.
+\end{frame}
+
+\end{document}

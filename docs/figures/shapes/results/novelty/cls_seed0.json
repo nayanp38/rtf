@@ -1,0 +1,122 @@
+{
+ "regime": "cls",
+ "seed": 0,
+ "n_train": 2048,
+ "n_test_per_shape": 256,
+ "epochs": 30,
+ "latent_dim": 16,
+ "seconds": 79.52942895889282,
+ "participation_ratio": 1.0088280707234991,
+ "novelty_auroc_knn": 0.701690673828125,
+ "novelty_auroc_knn_per_shape": {
+  "triangle": 0.7741622924804688,
+  "ring": 0.63909912109375,
+  "ellipse": 0.6219406127929688,
+  "cross": 0.7715606689453125
+ },
+ "novelty_auroc_conf": 0.4445466995239258,
+ "novelty_auroc_conf_per_shape": {
+  "triangle": 0.43654632568359375,
+  "ring": 0.4023094177246094,
+  "ellipse": 0.43598175048828125,
+  "cross": 0.5033493041992188
+ },
+ "cluster_ami": 0.29025319814740125,
+ "cluster_per_shape": {
+  "circle": {
+   "majority_cluster": 1,
+   "recall": 0.5390625,
+   "purity": 0.26744186046511625
+  },
+  "square": {
+   "majority_cluster": 3,
+   "recall": 0.53125,
+   "purity": 0.768361581920904
+  },
+  "triangle": {
+   "majority_cluster": 1,
+   "recall": 0.515625,
+   "purity": 0.2558139534883721
+  },
+  "ring": {
+   "majority_cluster": 4,
+   "recall": 0.41796875,
+   "purity": 0.22478991596638656
+  },
+  "ellipse": {
+   "majority_cluster": 1,
+   "recall": 0.47265625,
+   "purity": 0.23449612403100775
+  },
+  "cross": {
+   "majority_cluster": 1,
+   "recall": 0.23046875,
+   "purity": 0.11434108527131782
+  }
+ },
+ "contingency": [
+  [
+   0,
+   138,
+   22,
+   0,
+   96,
+   0
+  ],
+  [
+   120,
+   0,
+   0,
+   136,
+   0,
+   0
+  ],
+  [
+   0,
+   132,
+   16,
+   1,
+   106,
+   1
+  ],
+  [
+   0,
+   66,
+   75,
+   0,
+   107,
+   8
+  ],
+  [
+   0,
+   121,
+   20,
+   0,
+   113,
+   2
+  ],
+  [
+   13,
+   59,
+   54,
+   40,
+   54,
+   36
+  ]
+ ],
+ "probe6_acc": 0.4381510416666667,
+ "probe6_recall": {
+  "circle": 0.59765625,
+  "square": 0.9921875,
+  "triangle": 0.29296875,
+  "ring": 0.4453125,
+  "ellipse": 0.12109375,
+  "cross": 0.1796875
+ },
+ "novel_called_circle": {
+  "triangle": 0.99609375,
+  "ring": 1.0,
+  "ellipse": 1.0,
+  "cross": 0.796875
+ }
+}

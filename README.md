@@ -205,14 +205,87 @@ python linear_probe.py --runs-dir ../runs --output-dir ../analysis
 # Physical-unit reconstruction metrics
 python evaluate_physical.py --runs-dir ../runs --data-dir /path/to/photo_events \
     --output-dir ../analysis/physical
+
+# Discovery preservation: does the latent keep what you need to find a transient?
+python eval_discovery.py \
+    --checkpoint ../runs/model_name/best_model.pt \
+    --summary ../runs/model_name/summary.json \
+    --data-dir ../data_gp \
+    --output-dir ../analysis/discovery \
+    --inject-preset sn_ia --host-select variable
 ```
+
+### Discovery-preservation evaluation
+
+`eval_discovery.py` measures whether the fingerprint preserves the
+*discovery-notable* properties of a light curve rather than just its MSE.
+Ten properties are measured identically on the original and on the decoded
+light curve (`transient_properties.py`): discovery mag, peak mag, `t_peak`,
+rise and decline rates, amplitude, half-max width, duration, and g − r colour
+at peak / on average. Three stages:
+
+| Stage | Question | Output |
+|---|---|---|
+| `recon` | Are the properties recoverable from the decoded curve? | MAE / bias / R² / fraction-within-tolerance per property, overall and per class (transient vs variable, SNIa, AGN, ...) |
+| `probe` | Is the property *in* the latent even if the decoder doesn't render it? | Ridge/MLP probe error vs a median baseline (“skill”), plus AUC for `is_transient` and `fast_evolver` flags |
+| `inject` | Would a transient that appears in a known source be noticed? | Injection–recovery curves vs injected amplitude: latent displacement relative to a re-noised null, completeness at fixed FPR, held-out probe AUC, and whether the injected peak survives decoding |
+
+Injection (`transient_injection.py`) adds a parametric transient (`sn_ia`,
+`sn_ii`, `tde`, `kilonova`, `flare` presets) in flux space at the host's
+existing epochs, rescaling errors for the extra flux and leaving cadence,
+bands and alert metadata untouched. Amplitudes are specified as `--delta-mags`
+relative to the host's median r-band magnitude (0 = doubles the host flux at
+peak). Subsets are selected with `--select` / `--host-select`
+(`transient`, `variable`, `coarse:AGN`, `fine:9`, `amplitude>1`, comma = AND).
+
+Without real data or a checkpoint the whole pipeline still runs on a generated
+synthetic set (SN Ia, SN II, TDE, CV outbursts, AGN random walk) and an
+untrained model, which is useful as a smoke test:
+
+```bash
+python transient_injection.py --output-dir ../data_synth --n-per-class 400   # synthetic NPZs
+python train.py --data-dir ../data_synth --output-dir ../runs --mode ae --use-metadata \
+    --latent-dims 16 --epochs 40 --device cpu --num-workers 0
+python eval_discovery.py --checkpoint ../runs/ae_dim16_meta/best_model.pt \
+    --data-dir ../data_synth --output-dir ../analysis/discovery_synth
+```
+
+Design rationale, a line-by-line walkthrough and an OOD-transient extension
+proposal are in [`docs/discovery_eval.md`](docs/discovery_eval.md).
+
+Outputs: `discovery_eval.json`, `recon_properties.png` (original vs decoded per
+property), `property_skill.png` (decoded vs probe skill), `injection_recovery.png`
+(completeness / sensitivity / recovery vs amplitude) and `injection_examples.png`
+(host, injected and decoded light curves). Caveat: for models that consume GP
+features, injected curves reuse the host's (stale) GP vector — recompute it
+with lightcurve-fitting for a fully consistent test.
 
 ### Tests
 
 ```bash
 pip install pytest pytest-cov
-pytest tests/ -v  # 71 tests
+pytest tests/ -v  # 119 tests
 ```
+
+**Cutout-only sanity check.** To confirm the image tower alone can shape the
+latent, `sanity_shapes.py` feeds synthetic circle vs. square stamps through the
+model with photometry held constant (one dummy zero token per source), so the
+latent is a pure function of the cutout. It reports linear-probe / kNN accuracy
+and silhouette on held-out stamps before and after a short image-only training
+run, and can save a PCA scatter. Note that `model.embed()` is `no_grad`; the
+script trains through `model.encode()` instead.
+
+```bash
+cd src
+python sanity_shapes.py --plot shapes.png          # simple CNN, ~30s on CPU
+python sanity_shapes.py --backbone zoobot          # needs `pip install timm`
+```
+
+With the simple CNN and 512 training stamps, held-out probe accuracy goes from
+chance to 0.82–0.94 across seeds (0.99 with 1024 stamps). The frozen Zoobot
+backbone is 0.93–0.98 separable before any training and 1.00 after. Sweeps over
+data size, latent dim, noise, bottleneck type and backbone, with figures, are in
+[`docs/shape_baseline.md`](docs/shape_baseline.md) (`shape_experiments.py`).
 
 ## Architecture
 
@@ -255,10 +328,14 @@ rtf/
 │   ├── linear_probe.py       # Linear probe classification
 │   ├── mlp_decoder.py        # MLP decoder classifiers
 │   ├── evaluate_physical.py  # Mag-space metrics + light curve plots
+│   ├── eval_discovery.py     # Discovery-preservation eval: recon / probe / injection-recovery
+│   ├── transient_properties.py # Discovery-notable properties (peak, t_peak, rise, colour, ...)
+│   ├── transient_injection.py  # Transient presets, flux-space injection, selection, synthetic data
 │   ├── visualize.py          # UMAP/t-SNE latent space plots
+│   ├── sanity_shapes.py      # Cutout-only circle-vs-square latent check
 │   ├── generate_surveysim.py # Synthetic data via survey-sim
 │   └── generate_synthetic.py # Synthetic data via parametric models
-├── tests/                    # 71 unit/integration tests
+├── tests/                    # 119 unit/integration tests
 ├── slurm/                    # OzSTAR job scripts
 ├── .github/workflows/ci.yml  # GitHub Actions CI (pytest + ruff)
 ├── pyproject.toml

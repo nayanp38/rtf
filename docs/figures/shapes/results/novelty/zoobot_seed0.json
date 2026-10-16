@@ -1,0 +1,115 @@
+{
+ "regime": "zoobot",
+ "seed": 0,
+ "n_train": 2048,
+ "n_test_per_shape": 256,
+ "epochs": 0,
+ "latent_dim": 16,
+ "seconds": 319.94707679748535,
+ "participation_ratio": 4.795909136528081,
+ "novelty_auroc_knn": 0.9982662200927734,
+ "novelty_auroc_knn_per_shape": {
+  "triangle": 0.9955596923828125,
+  "ring": 1.0,
+  "ellipse": 0.9981765747070312,
+  "cross": 0.99932861328125
+ },
+ "cluster_ami": 0.5402996348487508,
+ "cluster_per_shape": {
+  "circle": {
+   "majority_cluster": 2,
+   "recall": 0.796875,
+   "purity": 0.6845637583892618
+  },
+  "square": {
+   "majority_cluster": 5,
+   "recall": 0.5234375,
+   "purity": 0.40853658536585363
+  },
+  "triangle": {
+   "majority_cluster": 0,
+   "recall": 0.46875,
+   "purity": 0.47244094488188976
+  },
+  "ring": {
+   "majority_cluster": 3,
+   "recall": 0.9453125,
+   "purity": 1.0
+  },
+  "ellipse": {
+   "majority_cluster": 0,
+   "recall": 0.5234375,
+   "purity": 0.5275590551181102
+  },
+  "cross": {
+   "majority_cluster": 1,
+   "recall": 0.5,
+   "purity": 0.43537414965986393
+  }
+ },
+ "contingency": [
+  [
+   0,
+   9,
+   204,
+   0,
+   0,
+   43
+  ],
+  [
+   0,
+   33,
+   89,
+   0,
+   0,
+   134
+  ],
+  [
+   120,
+   61,
+   0,
+   0,
+   1,
+   74
+  ],
+  [
+   0,
+   8,
+   5,
+   242,
+   0,
+   1
+  ],
+  [
+   134,
+   55,
+   0,
+   0,
+   0,
+   67
+  ],
+  [
+   0,
+   128,
+   0,
+   0,
+   119,
+   9
+  ]
+ ],
+ "probe6_acc": 0.9947916666666666,
+ "probe6_recall": {
+  "circle": 0.98828125,
+  "square": 1.0,
+  "triangle": 0.98828125,
+  "ring": 0.99609375,
+  "ellipse": 0.99609375,
+  "cross": 1.0
+ },
+ "novel_called_circle": {
+  "triangle": 0.0,
+  "ring": 0.89453125,
+  "ellipse": 0.01171875,
+  "cross": 0.0078125
+ }
+}

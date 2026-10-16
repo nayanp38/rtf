@@ -1,0 +1,209 @@
+[
+ {
+  "n": 512,
+  "epochs": 30,
+  "latent_dim": 16,
+  "backbone": "simple",
+  "mode": "ae",
+  "noise": 0.1,
+  "seed": 0,
+  "before": {
+   "probe_acc": 0.4090909090909091,
+   "knn_acc": 0.564935064935065,
+   "silhouette": 0.0003393571241758764,
+   "centroid_sep": 0.3196296691894531
+  },
+  "after": {
+   "probe_acc": 0.9025974025974026,
+   "knn_acc": 0.8766233766233766,
+   "silhouette": 0.43725353479385376,
+   "centroid_sep": 10.74017333984375
+  },
+  "curve": [],
+  "seconds": 22.466562747955322
+ },
+ {
+  "n": 512,
+  "epochs": 30,
+  "latent_dim": 16,
+  "backbone": "simple",
+  "mode": "ae",
+  "noise": 0.1,
+  "seed": 1,
+  "before": {
+   "probe_acc": 0.487012987012987,
+   "knn_acc": 0.538961038961039,
+   "silhouette": -0.000813404971268028,
+   "centroid_sep": 0.21776176989078522
+  },
+  "after": {
+   "probe_acc": 0.9415584415584416,
+   "knn_acc": 0.9415584415584416,
+   "silhouette": 0.6081646680831909,
+   "centroid_sep": 13.961970329284668
+  },
+  "curve": [],
+  "seconds": 25.80975890159607
+ },
+ {
+  "n": 512,
+  "epochs": 30,
+  "latent_dim": 16,
+  "backbone": "simple",
+  "mode": "ae",
+  "noise": 0.1,
+  "seed": 2,
+  "before": {
+   "probe_acc": 0.5,
+   "knn_acc": 0.5844155844155844,
+   "silhouette": 0.0005252433475106955,
+   "centroid_sep": 0.29754671454429626
+  },
+  "after": {
+   "probe_acc": 0.7467532467532467,
+   "knn_acc": 0.7272727272727273,
+   "silhouette": 0.2761927843093872,
+   "centroid_sep": 6.737454891204834
+  },
+  "curve": [],
+  "seconds": 29.354390144348145
+ },
+ {
+  "n": 512,
+  "epochs": 30,
+  "latent_dim": 16,
+  "backbone": "simple",
+  "mode": "vae",
+  "noise": 0.1,
+  "seed": 0,
+  "before": {
+   "probe_acc": 0.4090909090909091,
+   "knn_acc": 0.564935064935065,
+   "silhouette": 0.0003393571241758764,
+   "centroid_sep": 0.3196296691894531
+  },
+  "after": {
+   "probe_acc": 0.8766233766233766,
+   "knn_acc": 0.8831168831168831,
+   "silhouette": 0.44878089427948,
+   "centroid_sep": 10.040257453918457
+  },
+  "curve": [],
+  "seconds": 27.191130876541138
+ },
+ {
+  "n": 512,
+  "epochs": 30,
+  "latent_dim": 16,
+  "backbone": "simple",
+  "mode": "vae",
+  "noise": 0.1,
+  "seed": 1,
+  "before": {
+   "probe_acc": 0.487012987012987,
+   "knn_acc": 0.538961038961039,
+   "silhouette": -0.000813404971268028,
+   "centroid_sep": 0.21776176989078522
+  },
+  "after": {
+   "probe_acc": 0.8831168831168831,
+   "knn_acc": 0.8701298701298701,
+   "silhouette": 0.4188716411590576,
+   "centroid_sep": 9.326762199401855
+  },
+  "curve": [],
+  "seconds": 26.085649967193604
+ },
+ {
+  "n": 512,
+  "epochs": 30,
+  "latent_dim": 16,
+  "backbone": "simple",
+  "mode": "vae",
+  "noise": 0.1,
+  "seed": 2,
+  "before": {
+   "probe_acc": 0.5,
+   "knn_acc": 0.5844155844155844,
+   "silhouette": 0.0005252433475106955,
+   "centroid_sep": 0.29754671454429626
+  },
+  "after": {
+   "probe_acc": 0.7597402597402597,
+   "knn_acc": 0.7272727272727273,
+   "silhouette": 0.22540715336799622,
+   "centroid_sep": 5.870331764221191
+  },
+  "curve": [],
+  "seconds": 25.589123964309692
+ },
+ {
+  "n": 512,
+  "epochs": 30,
+  "latent_dim": 16,
+  "backbone": "simple",
+  "mode": "vqvae",
+  "noise": 0.1,
+  "seed": 0,
+  "before": {
+   "probe_acc": 0.5,
+   "knn_acc": 0.5,
+   "silhouette": 0.0,
+   "centroid_sep": 0.0
+  },
+  "after": {
+   "probe_acc": 0.922077922077922,
+   "knn_acc": 0.9415584415584416,
+   "silhouette": 0.6252655386924744,
+   "centroid_sep": 14.199106216430664
+  },
+  "curve": [],
+  "seconds": 22.27200412750244
+ },
+ {
+  "n": 512,
+  "epochs": 30,
+  "latent_dim": 16,
+  "backbone": "simple",
+  "mode": "vqvae",
+  "noise": 0.1,
+  "seed": 1,
+  "before": {
+   "probe_acc": 0.5,
+   "knn_acc": 0.5,
+   "silhouette": 0.0,
+   "centroid_sep": 0.0
+  },
+  "after": {
+   "probe_acc": 0.9155844155844156,
+   "knn_acc": 0.9025974025974026,
+   "silhouette": 0.44873446226119995,
+   "centroid_sep": 9.300138473510742
+  },
+  "curve": [],
+  "seconds": 22.561928033828735
+ },
+ {
+  "n": 512,
+  "epochs": 30,
+  "latent_dim": 16,
+  "backbone": "simple",
+  "mode": "vqvae",
+  "noise": 0.1,
+  "seed": 2,
+  "before": {
+   "probe_acc": 0.5,
+   "knn_acc": 0.5,
+   "silhouette": 0.0,
+   "centroid_sep": 0.0
+  },
+  "after": {
+   "probe_acc": 0.7727272727272727,
+   "knn_acc": 0.7922077922077922,
+   "silhouette": 0.3274999260902405,
+   "centroid_sep": 6.642533779144287
+  },
+  "curve": [],
+  "seconds": 22.186052799224854
+ }
+]
