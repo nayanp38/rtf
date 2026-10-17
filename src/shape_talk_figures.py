@@ -27,6 +27,7 @@ from sanity_shapes import make_shape_stamps
 from shape_novelty import COLORS, SHAPES, make_stamps
 
 BLUE, ORANGE, GREY = "#2a78d6", "#eb6834", "#8a8a8a"
+AQUA = "#1baf7a"
 
 
 def style():
@@ -264,15 +265,21 @@ def fig_tsne_pair(latents, fig_dir):
         if regime == "cls":
             ax.text(
                 0.03,
-                0.04,
+                0.97,
                 "all shapes mixed along one curve;\nonly squares are set apart",
                 transform=ax.transAxes,
-                fontsize=10,
-                color=GREY,
-                va="bottom",
+                fontsize=11,
+                color="#3a4249",
+                va="top",
+                bbox={
+                    "boxstyle": "round,pad=0.35",
+                    "fc": "white",
+                    "ec": "#c9ced3",
+                    "alpha": 0.95,
+                },
             )
     fig.suptitle(
-        "Fingerprints of 1536 held-out stamps (2-D map of 16 numbers)",
+        "Fingerprints of 1536 held-out stamps: t-SNE view of the 16 numbers",
         fontsize=12,
         y=1.0,
     )
@@ -306,6 +313,11 @@ def fig_pca_pair(latents, fig_dir):
         fontsize=10,
         color=GREY,
         va="bottom",
+    )
+    fig.suptitle(
+        "Fingerprints of 1536 held-out stamps: 2 largest principal components",
+        fontsize=12,
+        y=1.0,
     )
     handles = [
         plt.Line2D([], [], marker="o", ls="", color=COLORS[s], ms=8, label=SHAPES[s])
@@ -457,7 +469,7 @@ def fig_light_curve(fig_dir):
         ylabel="magnitude (brighter $\\uparrow$)",
         ylim=(21.5, 17.0),
         xlim=(-15, 80),
-        title="A supernova-like light curve, as a survey sees it",
+        title="A supernova-like light curve",
     )
     ax.legend(frameon=False, loc="upper right", fontsize=10)
     fig.savefig(os.path.join(fig_dir, "talk_light_curve.png"))
@@ -511,6 +523,83 @@ def fig_metadata_annotated(fig_dir):
     plt.close(fig)
 
 
+def fig_alert_flood(fig_dir):
+    """The problem slide: alert flood -> broker filter -> served / discarded."""
+    from matplotlib.patches import FancyBboxPatch, Polygon
+
+    rng = np.random.default_rng(5)
+    fig, ax = plt.subplots(figsize=(10.5, 4.3))
+    ax.set_xlim(0, 10.5)
+    ax.set_ylim(0, 4.3)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    ax.grid(False)
+    PANEL = "#f3f6f9"
+    RULE = "#d9dee3"
+
+    def box(x, y, w, h, fc=PANEL, ec=RULE):
+        ax.add_patch(
+            FancyBboxPatch(
+                (x, y), w, h, boxstyle="round,pad=0.02,rounding_size=0.12",
+                fc=fc, ec=ec, lw=1.2, zorder=1,
+            )
+        )
+
+    # --- tonight's alerts: a dense flood ---
+    box(0.25, 0.35, 3.7, 3.4)
+    n = 3000
+    xs = rng.uniform(0.35, 3.85, n)
+    ys = rng.uniform(0.45, 3.65, n)
+    ax.scatter(xs, ys, s=5, c=BLUE, alpha=0.45, lw=0, zorder=2)
+    ax.text(2.1, 4.0, "Tonight: ~10 million alerts", ha="center", fontsize=13,
+            fontweight="bold", color="#1f2a33")
+    ax.text(2.1, 0.12, "~100 MB/s, every night", ha="center", fontsize=11,
+            color=GREY)
+
+    # --- the broker funnel ---
+    ax.add_patch(
+        Polygon([(4.0, 3.3), (6.4, 2.65), (6.4, 1.55), (4.0, 0.8)],
+                closed=True, fc="#e4e8ec", ec=RULE, lw=1.2, zorder=1)
+    )
+    ax.text(5.2, 2.1, "filter", ha="center", va="center", fontsize=12,
+            color="#1f2a33", zorder=3)
+
+    # --- what reaches you ---
+    box(6.6, 2.35, 3.65, 1.45)
+    kx = rng.uniform(6.75, 10.1, 30)
+    ky = rng.uniform(2.5, 3.65, 30)
+    ax.scatter(kx, ky, s=14, c=BLUE, lw=0, zorder=2)
+    ax.text(8.42, 4.0, "Processed alerts: ~1%", ha="center", fontsize=13,
+            fontweight="bold", color="#1f2a33")
+    ax.text(8.42, 2.15, "~1 MB/s, one HD video stream", ha="center", fontsize=11,
+            color=GREY)
+
+    # --- the discarded majority, with the one that mattered ---
+    box(6.6, 0.35, 3.65, 1.35, fc="#fafafa")
+    dx = rng.uniform(6.75, 10.1, 900)
+    dy = rng.uniform(0.45, 1.6, 900)
+    ax.scatter(dx, dy, s=5, c="#b8bec4", alpha=0.6, lw=0, zorder=2)
+    ax.scatter([8.9], [1.0], marker="*", s=260, c=AQUA, ec="white", lw=0.8,
+               zorder=4)
+    ax.text(8.42, 0.12, "discarded: ~99%", ha="center", fontsize=11, color=GREY)
+    ax.annotate(
+        "missed discovery",
+        xy=(8.9, 1.0), xytext=(5.55, 0.45), fontsize=11, color=AQUA,
+        ha="center", va="center",
+        arrowprops={"arrowstyle": "->", "color": AQUA, "lw": 1.5,
+                    "connectionstyle": "arc3,rad=-0.25"},
+        zorder=5,
+    )
+
+    # arrows: flood -> funnel -> kept / discarded
+    ax.annotate("", xy=(6.6, 3.08), xytext=(6.4, 2.6),
+                arrowprops={"arrowstyle": "->", "color": GREY, "lw": 1.5})
+    ax.annotate("", xy=(6.6, 1.1), xytext=(6.4, 1.6),
+                arrowprops={"arrowstyle": "->", "color": GREY, "lw": 1.5})
+    fig.savefig(os.path.join(fig_dir, "talk_alert_flood.png"))
+    plt.close(fig)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="../docs/figures/shapes/results")
@@ -519,6 +608,7 @@ def main():
     a = ap.parse_args()
     os.makedirs(a.fig, exist_ok=True)
     style()
+    fig_alert_flood(a.fig)
     fig_triplet_explained(a.fig)
     fig_light_curve(a.fig)
     fig_metadata_annotated(a.fig)
